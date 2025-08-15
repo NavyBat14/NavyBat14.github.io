@@ -83,7 +83,7 @@
     },
     {
       "name": "google_fonts",
-      "version": "6.2.1",
+      "version": "6.3.0",
       "dependencies": [
         "crypto",
         "flutter",
@@ -130,7 +130,7 @@
     },
     {
       "name": "http",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "dependencies": [
         "async",
         "http_parser",
@@ -262,7 +262,7 @@
     },
     {
       "name": "checked_yaml",
-      "version": "2.0.3",
+      "version": "2.0.4",
       "dependencies": [
         "json_annotation",
         "source_span",
@@ -512,7 +512,7 @@
     },
     {
       "name": "async",
-      "version": "2.12.0",
+      "version": "2.13.0",
       "dependencies": [
         "collection",
         "meta"
@@ -537,7 +537,7 @@
     },
     {
       "name": "image_picker_platform_interface",
-      "version": "2.10.1",
+      "version": "2.11.0",
       "dependencies": [
         "cross_file",
         "flutter",
@@ -586,7 +586,7 @@
     },
     {
       "name": "image_picker_android",
-      "version": "0.8.12+23",
+      "version": "0.8.12+25",
       "dependencies": [
         "flutter",
         "flutter_plugin_android_lifecycle",
@@ -595,7 +595,7 @@
     },
     {
       "name": "firebase_core_platform_interface",
-      "version": "5.4.0",
+      "version": "5.4.2",
       "dependencies": [
         "collection",
         "flutter",
@@ -908,7 +908,7 @@
     },
     {
       "name": "flutter_plugin_android_lifecycle",
-      "version": "2.0.28",
+      "version": "2.0.29",
       "dependencies": [
         "flutter"
       ]
@@ -934,7 +934,7 @@
     },
     {
       "name": "posix",
-      "version": "6.0.2",
+      "version": "6.0.3",
       "dependencies": [
         "ffi",
         "meta",
@@ -943,7 +943,7 @@
     },
     {
       "name": "vm_service",
-      "version": "14.3.1",
+      "version": "15.0.2",
       "dependencies": []
     },
     {
