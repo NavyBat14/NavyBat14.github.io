@@ -1,13 +1,16 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:skymiles_app/booking/booking_summary.dart';
 import 'package:skymiles_app/screens/home_page.dart';
-import 'dart:ui';
 
 class ExtraServicesPage extends StatefulWidget {
   final Map<String, dynamic> flight;
   final String selectedSeat;
+  final Map<String, dynamic>? returnFlight; // optional return flight
+  final String? selectedReturnSeat; // optional
   final String selectedClass;
   final int price;
+  final int? returnPrice; // optional return price
   final int passengers;
   final UserData user;
   final void Function(int) onBookingComplete;
@@ -16,8 +19,11 @@ class ExtraServicesPage extends StatefulWidget {
     super.key,
     required this.flight,
     required this.selectedSeat,
+    this.returnFlight,
+    this.selectedReturnSeat,
     required this.selectedClass,
     required this.price,
+    this.returnPrice,
     required this.passengers,
     required this.user,
     required this.onBookingComplete,
@@ -48,10 +54,16 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
     return total;
   }
 
+  int get totalPrice {
+    int total = widget.price + totalExtras;
+    if (widget.returnPrice != null) total += widget.returnPrice!;
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalPrice = widget.price + totalExtras;
     final flight = widget.flight;
+    final returnFlight = widget.returnFlight;
 
     return Scaffold(
       backgroundColor: darkBg,
@@ -79,9 +91,29 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
           children: [
             _buildStepsProgress(),
             const SizedBox(height: 24),
-            _buildFlightInfo(flight),
+
+            // Outbound flight
+            _buildFlightInfo(
+              flight,
+              widget.selectedSeat,
+              widget.selectedClass,
+              widget.price,
+            ),
+
+            // Return flight (if exists)
+            if (returnFlight != null && widget.selectedReturnSeat != null)
+              _buildFlightInfo(
+                returnFlight,
+                widget.selectedReturnSeat!,
+                widget.selectedClass,
+                widget.returnPrice ?? 0,
+                isReturn: true,
+              ),
+
             _buildBaggageOption(),
             const SizedBox(height: 16),
+
+            // Extras
             _buildSwitchCard(
               icon: Icons.airline_seat_recline_extra,
               title: "Luxury Lounge Access",
@@ -106,6 +138,7 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
               value: mealOnBoard,
               onChanged: (val) => setState(() => mealOnBoard = val),
             ),
+
             const SizedBox(height: 24),
             Text(
               "Total: \$$totalPrice",
@@ -116,6 +149,8 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
               ),
             ),
             const SizedBox(height: 12),
+
+            // Next button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -136,8 +171,11 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
                           (context) => BookingSummaryPage(
                             flight: flight,
                             selectedSeat: widget.selectedSeat,
+                            returnFlight: returnFlight,
+                            selectedReturnSeat: widget.selectedReturnSeat,
                             flightClass: widget.selectedClass,
                             basePrice: widget.price,
+                            returnPrice: widget.returnPrice ?? 0,
                             extraCost: totalExtras,
                             passengers: widget.passengers,
                             user: widget.user,
@@ -162,24 +200,13 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
     );
   }
 
-  Widget _buildStepsProgress() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: const [
-        _StepCircle(step: "1", label: "Traveler\nDetails", isDone: true),
-        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
-        _StepCircle(step: "2", label: "Seating\nPlan", isDone: true),
-        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
-        _StepCircle(step: "3", label: "Select\nSeat", isDone: true),
-        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
-        _StepCircle(step: "4", label: "Extra\nServices", isDone: false),
-        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
-        _StepCircle(step: "5", label: "Booking\nSummary", isDone: false),
-      ],
-    );
-  }
-
-  Widget _buildFlightInfo(Map<String, dynamic> flight) {
+  Widget _buildFlightInfo(
+    Map<String, dynamic> flight,
+    String seat,
+    String flightClass,
+    int price, {
+    bool isReturn = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -198,21 +225,12 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "From: ${flight['from']} → ${flight['to']}",
+            "${isReturn ? 'Return' : 'From'}: ${flight['from'] ?? '—'} → ${flight['to'] ?? '—'}",
             style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
           ),
-          Text(
-            "Class: ${widget.selectedClass}",
-            style: TextStyle(color: textSecondary),
-          ),
-          Text(
-            "Seat: ${widget.selectedSeat}",
-            style: TextStyle(color: textSecondary),
-          ),
-          Text(
-            "Base Price: \$${widget.price}",
-            style: TextStyle(color: textSecondary),
-          ),
+          Text("Class: $flightClass", style: TextStyle(color: textSecondary)),
+          Text("Seat: $seat", style: TextStyle(color: textSecondary)),
+          Text("Base Price: \$$price", style: TextStyle(color: textSecondary)),
         ],
       ),
     );
@@ -264,7 +282,7 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.luggage, color: Colors.white),
+                          const Icon(Icons.luggage, color: Colors.white),
                           const SizedBox(height: 6),
                           Text(
                             "+$kg Kg\n$price USD",
@@ -341,6 +359,23 @@ class _ExtraServicesPageState extends State<ExtraServicesPage> {
           child: child,
         ),
       ),
+    );
+  }
+
+  Widget _buildStepsProgress() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: const [
+        _StepCircle(step: "1", label: "Traveler\nDetails", isDone: true),
+        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+        _StepCircle(step: "2", label: "Seating\nPlan", isDone: true),
+        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+        _StepCircle(step: "3", label: "Select\nSeat", isDone: true),
+        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+        _StepCircle(step: "4", label: "Extra\nServices", isDone: false),
+        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+        _StepCircle(step: "5", label: "Booking\nSummary", isDone: false),
+      ],
     );
   }
 }

@@ -5,7 +5,8 @@ import 'package:skymiles_app/booking/booking_step3.dart';
 import 'package:skymiles_app/screens/home_page.dart';
 
 class ClassSelectionPage extends StatefulWidget {
-  final Map<String, dynamic> flight; // flight object from API
+  final Map<String, dynamic> flight; // outbound flight
+  final Map<String, dynamic>? returnFlight; // optional return flight
   final int passengers;
   final UserData user;
 
@@ -14,6 +15,7 @@ class ClassSelectionPage extends StatefulWidget {
     required this.flight,
     required this.passengers,
     required this.user,
+    this.returnFlight,
   });
 
   @override
@@ -107,13 +109,18 @@ class _ClassSelectionPageState extends State<ClassSelectionPage> {
     super.dispose();
   }
 
+  int calculateFinalPrice(double multiplier) {
+    final basePrice = (widget.flight['price'] ?? 0).toInt();
+    final returnPrice = widget.returnFlight?['price'] ?? 0;
+    final countryMultiplier = getCountryMultiplier(
+      widget.flight['userCountry'] ?? 'SG',
+    );
+    return ((basePrice + returnPrice) * multiplier * countryMultiplier).round();
+  }
+
   @override
   Widget build(BuildContext context) {
     final flight = widget.flight;
-    final double countryMultiplier = getCountryMultiplier(
-      flight['userCountry'] ?? 'SG',
-    );
-    final int basePrice = (flight['price'] ?? 0).toInt();
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E2128),
@@ -140,10 +147,7 @@ class _ClassSelectionPageState extends State<ClassSelectionPage> {
               itemCount: _classes.length,
               itemBuilder: (context, index) {
                 final item = _classes[index];
-                final double totalClassPrice =
-                    basePrice * (item['multiplier'] as double);
-                final int finalPrice =
-                    (totalClassPrice * countryMultiplier).round();
+                final int finalPrice = calculateFinalPrice(item['multiplier']);
 
                 return AnimatedBuilder(
                   animation: _controller,
@@ -336,6 +340,8 @@ class _ClassSelectionPageState extends State<ClassSelectionPage> {
                                           builder:
                                               (_) => SeatSelectionPage(
                                                 flight: flight,
+                                                returnFlight:
+                                                    widget.returnFlight,
                                                 selectedClass: item['title'],
                                                 finalPrice: finalPrice,
                                                 passengers: widget.passengers,

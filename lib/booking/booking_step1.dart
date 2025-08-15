@@ -6,7 +6,8 @@ import 'package:skymiles_app/booking/booking_step2.dart';
 import 'package:skymiles_app/screens/home_page.dart';
 
 class BookingStep1Page extends StatefulWidget {
-  final Map<String, dynamic> flight; // API flight object
+  final Map<String, dynamic> flight; // outbound flight
+  final Map<String, dynamic>? returnFlight; // optional return flight
   final int passengers;
   final UserData user;
 
@@ -15,6 +16,7 @@ class BookingStep1Page extends StatefulWidget {
     required this.flight,
     required this.passengers,
     required this.user,
+    this.returnFlight,
   }) : super(key: key);
 
   @override
@@ -22,8 +24,8 @@ class BookingStep1Page extends StatefulWidget {
 }
 
 class _BookingStep1PageState extends State<BookingStep1Page> {
-  final _nameController = TextEditingController();
-  final _passportController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _passportController = TextEditingController();
   DateTime? _selectedDate;
   String _selectedCountry = 'Singapore';
   bool _isSaving = false;
@@ -42,8 +44,9 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
   }
 
   int get totalPrice {
-    final price = widget.flight['price'] ?? 0.0;
-    return (price * widget.passengers).toInt();
+    final outbound = (widget.flight['price'] ?? 0).toDouble();
+    final ret = (widget.returnFlight?['price'] ?? 0).toDouble();
+    return ((outbound + ret) * widget.passengers).toInt();
   }
 
   String countryNameToCode(String name) {
@@ -66,7 +69,6 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
 
     final url = Uri.parse('http://<YOUR_SERVER_IP>:5000/bookings');
 
-    // Create a JSON-safe flight map
     final flightData = {
       "airline": widget.flight['airline'].toString(),
       "from": widget.flight['from'].toString(),
@@ -83,10 +85,33 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
       "flightNumber": widget.flight['flightNumber']?.toString() ?? '',
     };
 
+    final returnData =
+        widget.returnFlight != null
+            ? {
+              "airline": widget.returnFlight!['airline'].toString(),
+              "from": widget.returnFlight!['from'].toString(),
+              "to": widget.returnFlight!['to'].toString(),
+              "departure":
+                  widget.returnFlight!['departure'] is DateTime
+                      ? (widget.returnFlight!['departure'] as DateTime)
+                          .toIso8601String()
+                      : widget.returnFlight!['departure'].toString(),
+              "arrival":
+                  widget.returnFlight!['arrival'] is DateTime
+                      ? (widget.returnFlight!['arrival'] as DateTime)
+                          .toIso8601String()
+                      : widget.returnFlight!['arrival'].toString(),
+              "price": widget.returnFlight!['price'].toString(),
+              "flightNumber":
+                  widget.returnFlight!['flightNumber']?.toString() ?? '',
+            }
+            : null;
+
     final body = {
       "user": widget.user.name,
       "email": widget.user.email,
       "flight": flightData,
+      "returnFlight": returnData,
       "passengers": widget.passengers,
       "passengerName": _nameController.text,
       "passportNumber": _passportController.text,
@@ -118,6 +143,7 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
                   flight: widget.flight,
                   passengers: widget.passengers,
                   user: widget.user,
+                  returnFlight: widget.returnFlight,
                 ),
           ),
         );
@@ -163,17 +189,7 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStepCircle("1", "Detail\nTraveler", true),
-                _buildStepCircle("2", "Seating\nPlan", false),
-                _buildStepCircle("3", "Choose\nSeat", false),
-                _buildStepCircle("4", "Extra\nServices", false),
-                _buildStepCircle("5", "Booking\nSummary", false),
-              ],
-            ),
-            const SizedBox(height: 30),
+            // Booking summary
             Text(
               'Booking with ${widget.flight['airline']}',
               style: const TextStyle(
@@ -186,15 +202,8 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
               'From: ${widget.flight['from']} → To: ${widget.flight['to']}',
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
-            Text(
-              'Departure: ${widget.flight['departure']} - Arrival: ${widget.flight['arrival']}',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            Text(
-              'Passengers: ${widget.passengers}',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            // Passenger data
             const Text(
               "Passenger 1 Data",
               style: TextStyle(
@@ -203,14 +212,14 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             _buildInputField("Fullname", _nameController),
             const SizedBox(height: 16),
             _buildDropdownField("Citizenship", _selectedCountry),
             const SizedBox(height: 16),
             _buildInputField("Passport Number", _passportController),
             const SizedBox(height: 16),
-            _buildDatePickerField("Expiration Date"),
+            _buildDatePickerField("Passport Expiration Date"),
             const Spacer(),
             Text(
               'Total Price: \$${totalPrice}',
@@ -256,25 +265,6 @@ class _BookingStep1PageState extends State<BookingStep1Page> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStepCircle(String number, String label, bool active) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundColor:
-              active ? const Color(0xFFAF7A38) : const Color(0xFF495057),
-          child: Text(number, style: const TextStyle(color: Colors.white)),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: Colors.white),
-        ),
-      ],
     );
   }
 

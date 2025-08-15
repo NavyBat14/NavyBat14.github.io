@@ -5,6 +5,7 @@ import 'package:skymiles_app/screens/home_page.dart'; // UserData import
 
 class SeatSelectionPage extends StatefulWidget {
   final Map<String, dynamic> flight;
+  final Map<String, dynamic>? returnFlight; // optional return flight
   final String selectedClass;
   final int finalPrice;
   final int passengers;
@@ -17,6 +18,7 @@ class SeatSelectionPage extends StatefulWidget {
     required this.finalPrice,
     required this.passengers,
     required this.user,
+    this.returnFlight,
   });
 
   @override
@@ -25,15 +27,20 @@ class SeatSelectionPage extends StatefulWidget {
 
 class _SeatSelectionPageState extends State<SeatSelectionPage> {
   String? selectedSeat;
+  String? selectedReturnSeat;
+
   final List<String> economyColumns = ['A', 'B', 'C', 'D', 'E', 'F'];
   final List<String> firstClassColumns = ['A', 'B', 'E', 'F'];
   final List<int> seatRows = List.generate(20, (index) => index + 1);
+
   late List<String> unavailableSeats;
+  late List<String> unavailableReturnSeats;
 
   @override
   void initState() {
     super.initState();
     final random = Random();
+
     final Set<String> tempSeats = {};
     while (tempSeats.length < 20) {
       int row = seatRows[random.nextInt(seatRows.length)];
@@ -41,15 +48,31 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       tempSeats.add('$row$col');
     }
     unavailableSeats = tempSeats.toList();
+
+    // Generate unavailable seats for return flight if exists
+    if (widget.returnFlight != null) {
+      final Set<String> tempReturnSeats = {};
+      while (tempReturnSeats.length < 20) {
+        int row = seatRows[random.nextInt(seatRows.length)];
+        String col = economyColumns[random.nextInt(economyColumns.length)];
+        tempReturnSeats.add('$row$col');
+      }
+      unavailableReturnSeats = tempReturnSeats.toList();
+    }
   }
 
-  Color getSeatColor(String seat) {
-    if (selectedSeat == seat) return const Color(0xFFFFD700); // Selected
-    if (unavailableSeats.contains(seat)) return Colors.grey.shade800; // Taken
-    return const Color(0xFFE6CEA1); // Available
+  Color getSeatColor(String seat, {bool isReturn = false}) {
+    if (isReturn && selectedReturnSeat == seat) return const Color(0xFFFFD700);
+    if (!isReturn && selectedSeat == seat) return const Color(0xFFFFD700);
+
+    List<String> takenSeats =
+        isReturn ? unavailableReturnSeats : unavailableSeats;
+    if (takenSeats.contains(seat)) return Colors.grey.shade800;
+
+    return const Color(0xFFE6CEA1);
   }
 
-  Widget buildSeatRow(int row) {
+  Widget buildSeatRow(int row, {bool isReturn = false}) {
     bool isFirstClass = row <= 2;
     List<String> columns = isFirstClass ? firstClassColumns : economyColumns;
 
@@ -77,11 +100,21 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Row(
-                  children: left.map((col) => seatButton('$row$col')).toList(),
+                  children:
+                      left
+                          .map(
+                            (col) => seatButton('$row$col', isReturn: isReturn),
+                          )
+                          .toList(),
                 ),
                 const SizedBox(width: 24),
                 Row(
-                  children: right.map((col) => seatButton('$row$col')).toList(),
+                  children:
+                      right
+                          .map(
+                            (col) => seatButton('$row$col', isReturn: isReturn),
+                          )
+                          .toList(),
                 ),
               ],
             ),
@@ -91,9 +124,13 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     );
   }
 
-  Widget seatButton(String seatId) {
-    bool isTaken = unavailableSeats.contains(seatId);
-    bool isSelected = selectedSeat == seatId;
+  Widget seatButton(String seatId, {bool isReturn = false}) {
+    List<String> takenSeats =
+        isReturn ? unavailableReturnSeats : unavailableSeats;
+    String? currentSelected = isReturn ? selectedReturnSeat : selectedSeat;
+
+    bool isTaken = takenSeats.contains(seatId);
+    bool isSelected = currentSelected == seatId;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -103,7 +140,11 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                 ? null
                 : () {
                   setState(() {
-                    selectedSeat = seatId;
+                    if (isReturn) {
+                      selectedReturnSeat = seatId;
+                    } else {
+                      selectedSeat = seatId;
+                    }
                   });
                 },
         child: AnimatedContainer(
@@ -189,6 +230,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   @override
   Widget build(BuildContext context) {
     final flight = widget.flight;
+    final returnFlight = widget.returnFlight;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1F26),
@@ -227,56 +269,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ),
           ),
           const SizedBox(height: 16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 36),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children:
-                      ['A', 'B', 'C']
-                          .map(
-                            (col) => SizedBox(
-                              width: 36,
-                              child: Center(
-                                child: Text(
-                                  col,
-                                  style: const TextStyle(
-                                    color: Color(0xFFE6CEA1),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                ),
-                const SizedBox(width: 24),
-                Row(
-                  children:
-                      ['D', 'E', 'F']
-                          .map(
-                            (col) => SizedBox(
-                              width: 36,
-                              child: Center(
-                                child: Text(
-                                  col,
-                                  style: const TextStyle(
-                                    color: Color(0xFFE6CEA1),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-
           Expanded(
             child: InteractiveViewer(
               boundaryMargin: const EdgeInsets.all(24),
@@ -336,7 +328,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: buildLegend(),
@@ -386,6 +377,8 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                                       price: widget.finalPrice,
                                       passengers: widget.passengers,
                                       user: widget.user,
+                                      returnFlight:
+                                          returnFlight, // Pass return flight
                                       onBookingComplete: (earnedMiles) {},
                                     ),
                               ),
