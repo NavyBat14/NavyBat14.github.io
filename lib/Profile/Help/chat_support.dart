@@ -1,35 +1,43 @@
 import 'package:flutter/material.dart';
 
-class ChatSupportPage extends StatefulWidget {
-  const ChatSupportPage({super.key});
+class ChatbotScreen extends StatefulWidget {
+  const ChatbotScreen({super.key});
 
   @override
-  _ChatSupportPageState createState() => _ChatSupportPageState();
+  _ChatbotScreenState createState() => _ChatbotScreenState();
 }
 
-class _ChatSupportPageState extends State<ChatSupportPage>
+class _ChatbotScreenState extends State<ChatbotScreen>
     with SingleTickerProviderStateMixin {
   final List<Map<String, String>> _messages = [];
   final TextEditingController _controller = TextEditingController();
   bool _isBotTyping = false;
   late AnimationController _dotController;
 
-  final Color backgroundDark = const Color(0xFF0A0A12);
-  final Color bubbleUser = const Color(0xFFFFD700);
-  final Color bubbleBot = const Color(0xFF1E1E2A);
-  final Color inputBackground = const Color(0xFF1B1B24);
-  final Color neonAccent = const Color(0xFFFFD700);
+  final List<Map<String, dynamic>> quickReplies = [
+    {"text": "Information", "icon": Icons.info_outline},
+    {"text": "Flight Booking", "icon": Icons.flight_takeoff},
+    {"text": "Flight Status", "icon": Icons.schedule},
+    {"text": "Reschedule / Cancel", "icon": Icons.edit_calendar},
+    {"text": "Check-in & Boarding Pass", "icon": Icons.airplane_ticket},
+    {"text": "Feedback / Complaint", "icon": Icons.feedback_outlined},
+    {"text": "Offers & Deals", "icon": Icons.local_offer_outlined},
+    {"text": "Loyalty Program", "icon": Icons.card_giftcard},
+  ];
 
   @override
   void initState() {
     super.initState();
-
     _dotController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat();
 
-    _addBotGreeting();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _sendBotMessage(
+        "👋 Hello! Welcome to Skymiles Support. How can I help you today?",
+      );
+    });
   }
 
   @override
@@ -38,49 +46,48 @@ class _ChatSupportPageState extends State<ChatSupportPage>
     super.dispose();
   }
 
-  void _addBotGreeting() {
-    setState(() => _isBotTyping = true);
-    Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _isBotTyping = false;
-        _messages.add({
-          "sender": "bot",
-          "text": "👋 Hello! Welcome to Skymiles Support. How can I help you today?",
-        });
-      });
-    });
-  }
-
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
 
-    setState(() => _messages.add({"sender": "user", "text": text}));
+    setState(() {
+      _messages.add({"sender": "user", "text": text});
+    });
     _controller.clear();
-    setState(() => _isBotTyping = true);
 
+    setState(() => _isBotTyping = true);
     Future.delayed(const Duration(milliseconds: 800), () {
-      String botReply = _generateBotReply(text);
-      setState(() {
-        _isBotTyping = false;
-        _messages.add({"sender": "bot", "text": botReply});
-      });
+      String response = _generateBotReply(text);
+      _sendBotMessage(response);
     });
   }
 
-  String _generateBotReply(String userMessage) {
-    String msg = userMessage.toLowerCase();
-    if (msg.contains("book") || msg.contains("flight")) {
-      return "🛫 Sure! I can help you with bookings. Could you tell me your travel dates and destination?";
-    } else if (msg.contains("cancel")) {
-      return "❌ I can assist you with cancellations. Please provide your booking reference number.";
-    } else if (msg.contains("miles") || msg.contains("reward")) {
-      return "💎 You can view and redeem your miles in the Rewards section of the app.";
-    } else if (msg.contains("hello") || msg.contains("hi")) {
-      return "👋 Hello there! How can I help you today?";
-    } else if (msg.contains("thank")) {
-      return "😊 You're most welcome! Is there anything else I can help you with?";
+  void _sendBotMessage(String text) {
+    setState(() {
+      _isBotTyping = false;
+      _messages.add({"sender": "bot", "text": text});
+    });
+  }
+
+  String _generateBotReply(String query) {
+    query = query.toLowerCase();
+    if (query.contains("information")) {
+      return "You can ask me about airline information, airport navigation, or flight details.";
+    } else if (query.contains("book") || query.contains("flight booking")) {
+      return "Sure! Please provide your departure, arrival, and travel date so I can help you book a flight.";
+    } else if (query.contains("status")) {
+      return "I can give you real-time updates on delays, cancellations, or schedule changes.";
+    } else if (query.contains("reschedule") || query.contains("cancel")) {
+      return "You can easily reschedule or cancel your flights here. Just provide your booking reference (PNR).";
+    } else if (query.contains("check-in") || query.contains("boarding pass")) {
+      return "I can help you check-in and generate a digital boarding pass. Please share your booking reference (PNR).";
+    } else if (query.contains("feedback") || query.contains("complaint")) {
+      return "You can leave feedback or complaints here, and I’ll forward them to the right department.";
+    } else if (query.contains("offers") || query.contains("deals")) {
+      return "I can show you personalized offers, discounts, and loyalty rewards based on your travel history.";
+    } else if (query.contains("loyalty") || query.contains("miles")) {
+      return "You can check loyalty points, redeem miles, and view reward tiers directly with me.";
     }
-    return "✈ I'm here to help! Could you please provide more details about your request?";
+    return "I'm not sure I understand. Can you rephrase?";
   }
 
   Widget _typingIndicator() {
@@ -98,7 +105,7 @@ class _ChatSupportPageState extends State<ChatSupportPage>
                 padding: EdgeInsets.symmetric(horizontal: 2),
                 child: Text(
                   "•",
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: TextStyle(color: Colors.black, fontSize: 20),
                 ),
               ),
             );
@@ -108,143 +115,94 @@ class _ChatSupportPageState extends State<ChatSupportPage>
     );
   }
 
-  Widget _buildBubble(String text, bool isUser) {
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7,
-        ),
-        decoration: BoxDecoration(
-          gradient: isUser
-              ? LinearGradient(
-                  colors: [bubbleUser.withOpacity(0.9), bubbleUser.withOpacity(0.7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : LinearGradient(
-                  colors: [bubbleBot.withOpacity(0.85), bubbleBot.withOpacity(0.65)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isUser ? 20 : 4),
-            topRight: Radius.circular(isUser ? 4 : 20),
-            bottomLeft: const Radius.circular(20),
-            bottomRight: const Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isUser ? bubbleUser.withOpacity(0.4) : Colors.black26,
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundDark,
-      appBar: AppBar(
-        title: const Text('Chat Support'),
-        backgroundColor: neonAccent,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("Airline Chatbot")),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               itemCount: _messages.length + (_isBotTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_isBotTyping && index == _messages.length) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [bubbleBot.withOpacity(0.8), bubbleBot.withOpacity(0.6)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: _typingIndicator(),
+                  return Container(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.all(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: _typingIndicator(),
                     ),
                   );
                 }
+
                 final message = _messages[index];
-                bool isUser = message["sender"] == "user";
-                return _buildBubble(message["text"]!, isUser);
+                final isUser = message["sender"] == "user";
+                return Container(
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  padding: const EdgeInsets.all(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isUser ? Colors.blue[200] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(message["text"] ?? ""),
+                  ),
+                );
               },
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: inputBackground,
-              boxShadow: [
-                BoxShadow(
-                  color: neonAccent.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, -2),
-                ),
-              ],
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.all(8),
+              itemBuilder: (context, index) {
+                final item = quickReplies[index];
+                return ElevatedButton.icon(
+                  onPressed: () => _sendMessage(item["text"]),
+                  icon: Icon(item["icon"], size: 16, color: Colors.white),
+                  label: Text(
+                    item["text"],
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              },
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemCount: quickReplies.length,
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      hintStyle: TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: inputBackground.withOpacity(0.9),
+                      hintText: "Ask me something...",
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                     ),
-                    onSubmitted: _sendMessage,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [neonAccent.withOpacity(0.9), neonAccent.withOpacity(0.7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: neonAccent.withOpacity(0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.black),
-                    onPressed: () => _sendMessage(_controller.text),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () => _sendMessage(_controller.text),
                 ),
               ],
             ),

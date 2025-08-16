@@ -66,7 +66,7 @@ class HelpSupportPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Support Options (Horizontal Scroll)
+              // Support Options
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -80,7 +80,7 @@ class HelpSupportPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const ChatSupportPage(),
+                            builder: (context) => ChatbotScreen(),
                           ),
                         );
                       },
@@ -95,7 +95,7 @@ class HelpSupportPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const CallEmailSupportPage(),
+                            builder: (context) => CallEmailSupportPage(),
                           ),
                         );
                       },
@@ -110,12 +110,11 @@ class HelpSupportPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) => const FAQDetailPage(
-                                  question: 'Frequently Asked Questions',
-                                  answer:
-                                      'Here you can show your most common questions and answers.',
-                                ),
+                            builder: (context) => FAQDetailPage(
+                              question: 'Frequently Asked Questions',
+                              answer:
+                                  'Here you can show your most common questions and answers.',
+                            ),
                           ),
                         );
                       },
@@ -136,7 +135,7 @@ class HelpSupportPage extends StatelessWidget {
               const SizedBox(height: 12),
 
               // FAQ list
-              ...faqs.map((faq) => _buildFAQItem(context, faq)),
+              ...faqs.map((faq) => _buildFAQItem(context, faq)).toList(),
 
               const SizedBox(height: 30),
 
@@ -279,11 +278,10 @@ class HelpSupportPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => FAQDetailPage(
-                    question: faq['question'] ?? '',
-                    answer: faq['answer'] ?? '',
-                  ),
+              builder: (context) => FAQDetailPage(
+                question: faq['question'] ?? '',
+                answer: faq['answer'] ?? '',
+              ),
             ),
           );
         },
